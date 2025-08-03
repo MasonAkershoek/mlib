@@ -1,99 +1,54 @@
-#
-# 'make'        build executable file 'main'
-# 'make clean'  removes all .o and executable files
-#
-
-# define the Cpp compiler to use
 CXX = g++
+CXXFLAGS = -std=c++17 -Wall -Wextra -g -fPIC
 
-# define any compile-time flags
-CXXFLAGS	:= -std=c++17 -Wall -Wextra -g
-
-# define library paths in addition to /usr/lib
-#   if I wanted to include libraries not in /usr/lib I'd specify
-#   their path using -Lpath, something like:
-LFLAGS =
-
-# define output directory
-OUTPUT	:= output
-
-# define source directory
-SRC		:= src
-
-# define include directory
-INCLUDE	:= include
-
-# define lib directory
-LIB		:= lib
+SRC := src
+OUTPUT := output
+TESTS := tests
 
 ifeq ($(OS),Windows_NT)
-MAIN	:= main.exe
-SOURCEDIRS	:= $(SRC)
-INCLUDEDIRS	:= $(INCLUDE)
-LIBDIRS		:= $(LIB)
-FIXPATH = $(subst /,\,$1)
-RM			:= del /q /f
-MD	:= mkdir
+    SHARED_LIB := $(OUTPUT)/mlib.dll
+    SHARED_LIB_FLAGS := -shared
+    SHARED_LIB_LINK := -Wl,--out-implib,$(OUTPUT)/mlib.lib
+    TEST_EXE := $(OUTPUT)/test.exe
+    RM := del /q /f
+    MD := if not exist $(OUTPUT) mkdir $(OUTPUT)
+    EXE_RUN := $(TEST_EXE)
 else
-MAIN	:= main
-SOURCEDIRS	:= $(shell find $(SRC) -type d)
-INCLUDEDIRS	:= $(shell find $(INCLUDE) -type d)
-LIBDIRS		:= $(shell find $(LIB) -type d)
-FIXPATH = $1
-RM = rm -f
-MD	:= mkdir -p
+    SHARED_LIB := $(OUTPUT)/mlib.so
+    SHARED_LIB_FLAGS := -shared
+    SHARED_LIB_LINK :=
+    TEST_EXE := $(OUTPUT)/test.exe
+    RM := rm -f
+    MD := mkdir -p $(OUTPUT)
+    EXE_RUN := ./test.exe
 endif
 
-# define any directories containing header files other than /usr/include
-INCLUDES	:= $(patsubst %,-I%, $(INCLUDEDIRS:%/=%))
+LIB_SRC := $(wildcard $(SRC)/*.cpp)
+LIB_HDR := $(wildcard $(SRC)/*.h)
+TEST_SRC := $(TESTS)/test.cpp
 
-# define the C libs
-LIBS		:= $(patsubst %,-L%, $(LIBDIRS:%/=%))
+.PHONY: all lib test clean
 
-# define the C source files
-SOURCES		:= $(wildcard $(patsubst %,%/*.cpp, $(SOURCEDIRS)))
+all: lib
 
-# define the C object files
-OBJECTS		:= $(SOURCES:.cpp=.o)
-
-# define the dependency output files
-DEPS		:= $(OBJECTS:.o=.d)
-
-#
-# The following part of the makefile is generic; it can be used to
-# build any executable just by changing the definitions above and by
-# deleting dependencies appended to the file from 'make depend'
-#
-
-OUTPUTMAIN	:= $(call FIXPATH,$(OUTPUT)/$(MAIN))
-
-all: $(OUTPUT) $(MAIN)
-	@echo Executing 'all' complete!
+lib: $(OUTPUT) $(SHARED_LIB)
 
 $(OUTPUT):
-	$(MD) $(OUTPUT)
+	$(MD)
 
-$(MAIN): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $(OUTPUTMAIN) $(OBJECTS) $(LFLAGS) $(LIBS)
+$(SHARED_LIB): $(LIB_SRC) $(LIB_HDR) | $(OUTPUT)
+	$(CXX) $(CXXFLAGS) $(SHARED_LIB_FLAGS) $(SHARED_LIB_LINK) -I$(SRC) -o $(SHARED_LIB) $(LIB_SRC)
 
-# include all .d files
--include $(DEPS)
+test: $(TEST_EXE)
+	$(EXE_RUN)
 
-# this is a suffix replacement rule for building .o's and .d's from .c's
-# it uses automatic variables $<: the name of the prerequisite of
-# the rule(a .c file) and $@: the name of the target of the rule (a .o file)
-# -MMD generates dependency output files same name as the .o file
-# (see the gnu make manual section about automatic variables)
-.cpp.o:
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -MMD $<  -o $@
+$(TEST_EXE): $(TEST_SRC) $(SHARED_LIB)
+	$(CXX) $(CXXFLAGS) -I$(SRC) $(TEST_SRC) $(SHARED_LIB) -o $(TEST_EXE)
 
-.PHONY: clean
 clean:
-	$(RM) $(OUTPUTMAIN)
-	$(RM) $(call FIXPATH,$(OBJECTS))
-	$(RM) $(call FIXPATH,$(DEPS))
+ifeq ($(OS),Windows_NT)
+	-$(RM) $(OUTPUT)\*.o $(OUTPUT)\*.so $(OUTPUT)\*.dll $(OUTPUT)\*.lib $(OUTPUT)\*.exe
+else
+	-$(RM) $(OUTPUT)/*.o $(OUTPUT)/*.so $(OUTPUT)/*.dll $(OUTPUT)/*.lib $(OUTPUT)/*.exe
+endif
 	@echo Cleanup complete!
-
-run: all
-	./$(OUTPUTMAIN)
-	@echo Executing 'run: all' complete!
