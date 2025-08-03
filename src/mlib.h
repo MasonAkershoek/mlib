@@ -47,11 +47,8 @@ template <typename T> class mList{
         int listSize;
         T* data;
 
-        // Fetch the item in the spesified index of the list
-        T getData(int index);
-
-        // Resize the data array for fitting more items in the list -1=shrink 1=grow
-        void resize(int direction);
+        // Resize the data array for fitting more items in the list
+        void resize();
 
         // Checks the size of the list and determins if th elist needs to be grown
         void checkSize();
