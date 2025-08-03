@@ -24,3 +24,42 @@ mList<T>::~mList(){
     delete[] data;
     data = nullptr;
 }
+
+template <typename T>
+T& mList<T>::operator[](int index){
+    if (index < 0 || index >= listSize){
+        throw out_of_range("Index out of range!");
+    }
+    return 
+}
+
+template <typename T>
+const T& mList<T>::operator[](int index) const{
+    if (index < 0 || index >= listSize){
+        throw out_of_range("Index out of range!");
+    }
+    return 
+}
+
+template <typename T>
+void mList<T>::checkSize(){
+    if (listSize+1 == arraySize){
+        resize()
+    }
+}
+
+template <typename T>
+void mList<T>::append(T item){
+    checkSize;
+    listSize++;
+    data[listSize-1] = item;
+}
+
+template <typename T>
+void mList<T>::pushback(T item){
+    
+}
+
+int main(){
+    return 0;
+}

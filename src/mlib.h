@@ -15,6 +15,8 @@ template <typename T> class mList{
         // Overload of the [] indexing operator
         T& operator[](int index);
 
+        const T& operator[](int index) const;
+
         // Append an item to the end of the list
         void append(T item); 
 
@@ -25,7 +27,7 @@ template <typename T> class mList{
         T pop();
 
         // Remove the item form the end of the list and return it
-        T popback()
+        T popback();
 
         // Remove and return the item at a spesifed location
         T remove();
@@ -49,6 +51,9 @@ template <typename T> class mList{
         T getData(int index);
 
         // Resize the data array for fitting more items in the list -1=shrink 1=grow
-        void resize(int direction)
+        void resize(int direction);
+
+        // Checks the size of the list and determins if th elist needs to be grown
+        void checkSize();
 
 };
